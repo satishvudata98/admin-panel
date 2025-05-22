@@ -7,3 +7,9 @@ backend/node_modules/
 
 # Build output
 frontend/build/
+backend/dist/
+
+# Package lock files
+frontend/package-lock.json
+backend/package-lock.json
+

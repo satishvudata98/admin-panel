@@ -1,11 +1,14 @@
+// src/App.js
 import React from 'react';
-import Registration from './components/Registration';
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from './Routes';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
   return (
-    <div className="App">
-      <Registration />
-    </div>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 
