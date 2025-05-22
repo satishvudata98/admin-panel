@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-const backendUrl = process.env.REACT_APP_BACKEND_URL;
 import {
   Container,
   Row,
@@ -16,6 +15,7 @@ import {
   Button,
 } from "reactstrap";
 import "./Login.css";
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
