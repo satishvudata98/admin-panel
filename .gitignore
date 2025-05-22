@@ -13,6 +13,8 @@ backend/dist/
 .env
 .env.local
 backend/.env
+frontend/.env.production
+frontend/.env.development
 
 # Package lock files
 frontend/package-lock.json

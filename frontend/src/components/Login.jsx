@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
 import {
   Container,
   Row,
@@ -24,7 +25,7 @@ const Login = () => {
     e.preventDefault();
 
     axios
-      .post("http://localhost:5000/api/login", { email, password })
+      .post(`${backendUrl}/api/login`, { email, password })
       .then((response) => {
         if (response.data.message === "Login successful") {
           navigate("/home");

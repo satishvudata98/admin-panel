@@ -5,7 +5,7 @@ import { Container, Row, Col, Form, FormGroup, Label, Input, Button } from "reac
 import { useNavigate } from 'react-router-dom';
 
 import "./Registration.css";
-
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
 function Registration() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -32,7 +32,7 @@ function Registration() {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/register", {
+      const res = await axios.post(`${backendUrl}/api/register`, {
         name: form.name,
         email: form.email,
         password: form.password,
