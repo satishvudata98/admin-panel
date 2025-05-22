@@ -1,37 +1,98 @@
 # Admin Panel
 
-This is a simple web application built with React, that allows users to register and then logs them in.
+A full-stack web application with a React frontend and a Node.js/Express backend. Users can register, log in, and access protected routes. User data is managed via context on the frontend and persisted in a database via the backend.
 
 ## Features
 
-- User registration
-- User login
-- User context to store user data
-- Protected routes
+- User registration and login
+- User context to store user data (frontend)
+- Protected routes (frontend)
+- REST API for authentication (backend)
+- Simple database configuration (backend)
 
-## Installation
+---
 
-In the project directory, you can run:
+## Project Structure
 
-### `npm start`
+```
+admin-panel/
+├── backend/      # Node.js/Express backend
+│   ├── config/   # Database config
+│   ├── controllers/ # Auth logic
+│   ├── routes/   # API routes
+│   ├── index.js  # Entry point
+│   └── package.json
+└── frontend/     # React frontend
+    ├── public/
+    ├── src/
+    ├── package.json
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+---
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Backend Setup (Node.js/Express)
 
-### `npm test`
+1. Open a terminal and navigate to the `backend` folder:
+   ```sh
+   cd backend
+   ```
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+3. Configure your database in `backend/config/db.js` as needed.
+4. Start the backend server:
+   ```sh
+   npm start
+   ```
+   The backend will run on [http://localhost:5000](http://localhost:5000) by default.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## Frontend Setup (React)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Open a new terminal and navigate to the `frontend` folder:
+   ```sh
+   cd frontend
+   ```
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+3. Start the frontend development server:
+   ```sh
+   npm start
+   ```
+   The app will run on [http://localhost:3000](http://localhost:3000).
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Running Tests (Frontend)
+
+From the `frontend` directory, run:
+```sh
+npm test
+```
+
+---
+
+## Building for Production (Frontend)
+
+From the `frontend` directory, run:
+```sh
+npm run build
+```
+The build will be output to the `frontend/build` folder.
+
+---
+
+## Deployment
+
+- Deploy the backend and frontend separately as needed.
+- Ensure the frontend is configured to use the correct backend API URL (see API calls in frontend code).
+
+---
+
+## License
+
+MIT
