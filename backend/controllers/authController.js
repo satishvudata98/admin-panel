@@ -1,36 +1,62 @@
+// backend/controllers/authController.js
 const bcrypt = require('bcrypt');
-// const pool = require('../config/db');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 const supabase = require('../config/supabaseClient');
+const { 
+  accessTokenSecret, 
+  refreshTokenSecret,
+  accessTokenExpiry,
+  refreshTokenExpiry 
+} = require('../config/jwtConfig');
+
+// Helper function to generate tokens
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign(
+    { userId },
+    accessTokenSecret,
+    { expiresIn: accessTokenExpiry }
+  );
+  
+  const refreshToken = jwt.sign(
+    { userId, tokenId: uuidv4() },
+    refreshTokenSecret,
+    { expiresIn: refreshTokenExpiry }
+  );
+  
+  return { accessToken, refreshToken };
+};
+
+// Store refresh token in database
+const storeRefreshToken = async (userId, refreshToken) => {
+  const { error } = await supabase
+    .from('refresh_tokens')
+    .insert([{ 
+      user_id: userId, 
+      token: refreshToken,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    }]);
+    
+  if (error) throw error;
+};
 
 exports.registerUser = async (req, res) => {
   const { name, email, password } = req.body;
   
   try {
-    // const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    // const existingUser = await pool`SELECT * FROM users WHERE email = ${email}`;
+    // Check if user exists
     const { data: existingUsers, error: selectError } = await supabase
       .from('users')
       .select('*')
       .eq('email', email);
+      
     if (selectError) throw selectError;
-    // const rows = Array.isArray(existingUser) ? existingUser : existingUser.rows;
-    // if (rows.length > 0) {
-    //   return res.status(400).json({ message: 'Email already exists' });
-    // }
-     if (existingUsers.length > 0) {
+    if (existingUsers.length > 0) {
       return res.status(400).json({ message: 'Email already exists' });
     }
 
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // const result = await pool.query(
-    //   'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
-    //   [name, email, hashedPassword]
-    // );
-    // const result = await pool`INSERT INTO users (name, email, password) VALUES (${name}, ${email}, ${hashedPassword}) RETURNING id, name, email`;
-    // const rowsInserted = Array.isArray(result) ? result : result.rows;
-    // res.status(201).json({ user: rowsInserted[0] });
+    // Hash password and create user
+    const hashedPassword = await bcrypt.hash(password, 10);
     const { data: insertedUser, error: insertError } = await supabase
       .from('users')
       .insert([{ name, email, password: hashedPassword }])
@@ -39,7 +65,17 @@ exports.registerUser = async (req, res) => {
 
     if (insertError) throw insertError;
 
-    res.status(201).json({ user: insertedUser });
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(insertedUser.id);
+    
+    // Store refresh token
+    await storeRefreshToken(insertedUser.id, refreshToken);
+
+    res.status(201).json({ 
+      user: insertedUser,
+      accessToken,
+      refreshToken
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server error' });
@@ -48,33 +84,32 @@ exports.registerUser = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
+  
   try {
-    // const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    // const userResult = await pool`SELECT * FROM users WHERE email = ${email}`;
-    // const rows = Array.isArray(userResult) ? userResult : userResult.rows;
-    // if (rows.length === 0) {
-    //   return res.status(400).json({ message: 'Invalid email or password' });
-    // }
-
-    // const user = rows[0];
-    
-     const { data: users, error } = await supabase
+    // Find user
+    const { data: users, error } = await supabase
       .from('users')
       .select('*')
       .eq('email', email);
 
     if (error) throw error;
-
     if (users.length === 0) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
     const user = users[0];
-
+    
+    // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
+
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user.id);
+    
+    // Store refresh token
+    await storeRefreshToken(user.id, refreshToken);
 
     res.status(200).json({
       message: 'Login successful',
@@ -83,9 +118,131 @@ exports.loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
       },
+      accessToken,
+      refreshToken
     });
   } catch (err) {
     console.error('Login error:', err.message);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.refreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+  
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Refresh token required' });
+  }
+
+  try {
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, refreshTokenSecret);
+    
+    // Check if token exists in database
+    const { data: tokens, error: tokenError } = await supabase
+      .from('refresh_tokens')
+      .select('*')
+      .eq('token', refreshToken)
+      .eq('user_id', decoded.userId)
+      .gt('expires_at', new Date());
+      
+    if (tokenError) throw tokenError;
+    if (tokens.length === 0) {
+      return res.status(403).json({ message: 'Invalid refresh token' });
+    }
+
+    // Generate new tokens
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
+    
+    // Delete old refresh token
+    await supabase
+      .from('refresh_tokens')
+      .delete()
+      .eq('token', refreshToken);
+    
+    // Store new refresh token
+    await storeRefreshToken(decoded.userId, newRefreshToken);
+
+    res.json({ 
+      accessToken, 
+      refreshToken: newRefreshToken 
+    });
+  } catch (err) {
+    console.error('Refresh token error:', err);
+    return res.status(403).json({ message: 'Invalid refresh token' });
+  }
+};
+
+exports.logoutUser = async (req, res) => {
+  const { refreshToken } = req.body;
+  
+  if (!refreshToken) {
+    return res.status(400).json({ message: 'Refresh token required' });
+  }
+
+  try {
+    // Delete refresh token from database
+    const { error } = await supabase
+      .from('refresh_tokens')
+      .delete()
+      .eq('token', refreshToken);
+      
+    if (error) throw error;
+    
+    res.status(200).json({ message: 'Logout successful' });
+  } catch (err) {
+    console.error('Logout error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Middleware to verify access token
+exports.verifyToken = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'Access token required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, accessTokenSecret);
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    console.error('Token verification error:', err);
+    res.status(403).json({ message: 'Invalid or expired token' });
+  }
+};
+
+
+exports.validateSession = async (req, res) => {
+  try {
+    // Get the access token from header
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    // Verify the access token
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+      if (err) {
+        return res.status(403).json({ message: 'Invalid or expired token' });
+      }
+      
+      // Token is valid
+      res.status(200).json({ 
+        message: 'Session is valid',
+        user: {
+          id: user.userId,
+        }
+      });
+    });
+    
+  } catch (err) {
+    console.error('Session validation error:', err);
+    res.status(500).json({ message: 'Server error during session validation' });
   }
 };

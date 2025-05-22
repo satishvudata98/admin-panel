@@ -1,15 +1,25 @@
+//src/components/Home.jsx
 import React, { useContext } from 'react';
 import { Container, Row, Col, Card, CardBody, CardTitle, CardText, Button } from 'reactstrap';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
-
+import api from '../api/axios';
 const Home = () => {
   const { logout } = useContext(UserContext);
   const navigate = useNavigate();
-  const handleLogout = () => {
+// Update the Home component's logout
+const handleLogout = async () => {
+  try {
+    await api.post('/api/logout', { 
+      refreshToken: localStorage.getItem('refreshToken') 
+    });
+  } catch (err) {
+    console.error('Logout error:', err);
+  } finally {
     logout();
-    navigate('/');
-  };
+    navigate('/login', { replace: true });
+  }
+};
 
   return (
     <Container className="mt-5">

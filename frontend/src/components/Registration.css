@@ -1,10 +1,3 @@
-.registration-container {
-  margin-top: 50px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .registration-card {
   width: 600px;
   min-width: 600px;
@@ -41,5 +34,59 @@
 
 .registration-card a:hover {
   color: #0056b3;
+}
+
+.registration-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.registration-container .card {
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.registration-container .card-body {
+  padding: 2rem;
+}
+
+.registration-container .form-control {
+  padding: 0.75rem 1rem;
+  border-radius: 5px;
+  border: 1px solid #ced4da;
+  transition: all 0.3s;
+}
+
+.registration-container .form-control:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.registration-container .btn-primary {
+  background-color: #0d6efd;
+  border: none;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.3s;
+}
+
+.registration-container .btn-primary:hover {
+  background-color: #0b5ed7;
+}
+
+.registration-container .text-primary {
+  color: #0d6efd !important;
+}
+
+.registration-container .progress {
+  background-color: #e9ecef;
+}
+
+/* Responsive adjustments */
+@media (max-width: 575.98px) {
+  .registration-container .card-body {
+    padding: 1.5rem;
+  }
 }
 
