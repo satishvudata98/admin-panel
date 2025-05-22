@@ -9,6 +9,11 @@ backend/node_modules/
 frontend/build/
 backend/dist/
 
+#Environment variables
+.env
+.env.local
+backend/.env
+
 # Package lock files
 frontend/package-lock.json
 backend/package-lock.json
