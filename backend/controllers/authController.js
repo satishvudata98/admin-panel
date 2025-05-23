@@ -218,7 +218,6 @@ exports.verifyToken = async (req, res, next) => {
 
 exports.validateSession = async (req, res) => {
   try {
-    // Get the access token from header
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     
@@ -226,17 +225,19 @@ exports.validateSession = async (req, res) => {
       return res.status(401).json({ message: 'No token provided' });
     }
 
-    // Verify the access token
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    // Verify using the correct secret from config
+    jwt.verify(token, accessTokenSecret, (err, decoded) => {
       if (err) {
-        return res.status(403).json({ message: 'Invalid or expired token' });
+        return res.status(403).json({ 
+          message: 'Invalid or expired token',
+          code: 'SESSION_EXPIRED'
+        });
       }
       
-      // Token is valid
       res.status(200).json({ 
         message: 'Session is valid',
         user: {
-          id: user.userId,
+          id: decoded.userId,
         }
       });
     });

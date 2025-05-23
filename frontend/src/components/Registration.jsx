@@ -141,11 +141,12 @@ const Registration = () => {
         text: `Welcome ${user.name}! Registration successful. Redirecting...`,
         type: 'success'
       });
-      
-      // Redirect after 2 seconds
-      setTimeout(() => {
+      // Simulate a delay for the success message
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // setTimeout(() => {
         navigate('/home', { replace: true });
-      }, 2000);
+      // }, 2000);
       
     } catch (error) {
       console.error('Registration error:', error);

@@ -9,17 +9,24 @@ function SessionCheck() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkSession = async () => {
+   const checkSession = async () => {
       try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          throw new Error('NO_TOKEN');
+        }
+        
         await api.get('/api/validate-session');
       } catch (err) {
         handleSessionError(err);
       }
     };
 
-    const handleSessionError = (error) => {
+   const handleSessionError = (error) => {
       console.error('Session validation failed:', error);
-      localStorage.clear();
+      if (error.message !== 'NO_TOKEN') {
+        localStorage.clear();
+      }
       navigate('/login', { 
         replace: true,
         state: { sessionExpired: error.message === 'SESSION_EXPIRED' } 
@@ -33,7 +40,7 @@ function SessionCheck() {
         if (error.message === 'SESSION_EXPIRED') {
           handleSessionError(error);
         }
-        return Promise.reject(error);
+        return Promise.reject(error instanceof Error ? error : new Error(error));
       }
     );
 
